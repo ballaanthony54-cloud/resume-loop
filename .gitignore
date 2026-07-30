@@ -1,0 +1,6 @@
+__pycache__/
+.venv/
+.env
+*.log
+# raw ATS response cache written by local_sweep.py
+scripts/.cache/
