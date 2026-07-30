@@ -1,6 +1,22 @@
-__pycache__/
+# Python virtual environments
 .venv/
+.venvcd/
+venv/
+env/
+
+# Python caches
+__pycache__/
+*.py[cod]
+
+# Secrets and logs
 .env
 *.log
+
 # raw ATS response cache written by local_sweep.py
 scripts/.cache/
+
+# stray venv artifacts (in case a venv is ever created at the repo root)
+/Include/
+/Lib/
+/Scripts/
+/pyvenv.cfg
