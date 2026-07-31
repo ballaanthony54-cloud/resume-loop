@@ -150,6 +150,24 @@ def key_for(company: str, title: str, link: str) -> str:
     return hashlib.sha256(f"{company}|{title}|{link}".encode("utf-8")).hexdigest()
 
 
+# Map a role title to the best-fit resume variant (keyword-first, ordered).
+VARIANT_RULES = [
+    ("private-credit", ["private credit", "credit analyst", "credit associate"]),
+    ("leveraged-finance", ["leveraged finance", "loan execution", "lev fin", "syndicated loan", "par loan"]),
+    ("transaction-management", ["transaction manage", "trade support", "settlement", "loan clos", "trading analyst"]),
+    ("credit-risk", ["credit risk", "risk strateg", "operational risk"]),
+    ("asset-management-ops", ["asset management operation", "loan servic", "loan admin", "agency", "fund operation"]),
+]
+
+
+def guess_variant(title: str) -> str:
+    t = title.lower()
+    for variant, kws in VARIANT_RULES:
+        if any(k in t for k in kws):
+            return variant
+    return "private-credit"  # sensible default for this candidate
+
+
 def get_json(url: str):
     r = requests.get(url, headers=UA, timeout=TIMEOUT)
     if r.status_code == 200:
@@ -244,6 +262,58 @@ def write_seen(seen: dict) -> None:
         f.write("\n")
 
 
+def write_pulse(kept: list[dict], stats: dict, days: int) -> None:
+    """Write a markdown pulse to latest-pulse.md and archive/YYYY-MM-DD-pulse.md."""
+    today = f"{now_utc():%Y-%m-%d}"
+    lines = [
+        f"# Resume Loop pulse - {today} (UTC)",
+        "",
+        "_Automated Windows sweep (verified ATS links). Warm-intro drafts and the "
+        "Gmail response scan are not part of this automated run; trigger an on-demand "
+        "pulse in Cowork for those._",
+        "",
+        f"**{len(kept)} fresh role(s)** matching your titles, London-eligible, posted "
+        f"in the last {days} days, after dedup.",
+        "",
+    ]
+    for tier, label in (("A", "Tier A - priority companies"),
+                        ("B", "Tier B - strong match")):
+        rows = [k for k in kept if k["tier"] == tier]
+        if not rows:
+            continue
+        lines.append(f"## {label} ({len(rows)})")
+        lines.append("")
+        for j in rows:
+            d = f"{j['posted']:%Y-%m-%d}" if j["posted"] else "date n/a"
+            lines.append(f"### {j['title']}")
+            lines.append(f"- **Company / board:** {j['company']} ({j['ats']})")
+            lines.append(f"- **Location:** {j['location']}  |  **Posted:** {d}")
+            lines.append(f"- **Resume to attach:** `resumes/{j['variant']}.pdf`")
+            lines.append(f"- **Apply:** {j['link']}")
+            lines.append("")
+    if not kept:
+        lines.append("_No new roles this run. Nothing to apply to today._")
+        lines.append("")
+    lines += [
+        "---",
+        "## Dedup stats",
+        "",
+        f"- Boards scanned: {stats['boards']}",
+        f"- Postings seen: {stats['scanned']}",
+        f"- Dropped (title/role-type/seniority): {stats['dropped_title']}",
+        f"- Dropped (location): {stats['dropped_loc']}",
+        f"- Dropped (stale >{days}d): {stats['dropped_stale']}",
+        f"- Dropped (already seen): {stats['dropped_dupe']}",
+        f"- Final kept: {len(kept)}",
+        "",
+    ]
+    text = "\n".join(lines)
+    (REPO / "latest-pulse.md").write_text(text, encoding="utf-8", newline="\n")
+    archive = REPO / "archive"
+    archive.mkdir(exist_ok=True)
+    (archive / f"{today}-pulse.md").write_text(text, encoding="utf-8", newline="\n")
+
+
 # --------------------------------------------------------------------------- #
 # Main
 # --------------------------------------------------------------------------- #
@@ -253,6 +323,8 @@ def main() -> None:
     ap.add_argument("--probe-only", action="store_true", help="only show live boards")
     ap.add_argument("--update-seen", action="store_true",
                     help="append new roles to seen-roles.json")
+    ap.add_argument("--write-pulse", action="store_true",
+                    help="write latest-pulse.md and archive/YYYY-MM-DD-pulse.md")
     args = ap.parse_args()
 
     print(f"Resume Loop local sweep  |  {now_utc():%Y-%m-%d %H:%M UTC}\n")
@@ -310,6 +382,7 @@ def main() -> None:
             continue
         j["key"] = k
         j["tier"] = tier_of(j["company"], j["location"])
+        j["variant"] = guess_variant(j["title"])
         kept.append(j)
 
     kept.sort(key=lambda x: (x["tier"], x["company"]))
@@ -339,7 +412,18 @@ def main() -> None:
     print(f"  dropped dupe   : {dropped_dupe}")
     print(f"  final kept     : {len(kept)}")
 
-    # 5. Optionally persist.
+    stats = {
+        "boards": sum(len(v) for v in live.values()), "scanned": scanned,
+        "dropped_title": dropped_title, "dropped_loc": dropped_loc,
+        "dropped_stale": dropped_stale, "dropped_dupe": dropped_dupe,
+    }
+
+    # 5. Optionally write the pulse markdown.
+    if args.write_pulse:
+        write_pulse(kept, stats, args.days)
+        print(f"\n  pulse written to latest-pulse.md and archive/{now_utc():%Y-%m-%d}-pulse.md")
+
+    # 6. Optionally persist.
     if args.update_seen and kept:
         for j in kept:
             seen["roles"][j["key"]] = {
