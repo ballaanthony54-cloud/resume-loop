@@ -59,10 +59,17 @@ Morgan, Citi, KKR, BlueBay (Workday/Oracle/custom boards), plus general sweeps l
 
 - **API-sourced roles** are live by definition. Use their URL and date verbatim.
 - **Web-sourced roles:** WebFetch each URL and record `LIVE` / `404` / `403`.
-  - Drop 404s.
-  - Flag 403 / unverifiable with "click to confirm" rather than dropping.
+  - **Every role in the report MUST be confirmed currently live. If you cannot
+    confirm it, DROP it. Do not "flag" or "click to confirm" a role into the report.**
+  - Drop 404/410/gone.
+  - For JavaScript-rendered career sites (Workday, Citi, most banks/funds), a plain
+    fetch returns an empty shell and does NOT confirm liveness. Render the page with
+    the Claude-in-Chrome browser tools and confirm the posting still displays (title
+    present, no "no longer accepting applications" / "job not found"). If it cannot be
+    rendered and confirmed, DROP it.
   - Prefer direct ATS/company URLs over aggregators (Indeed, Welcome to the Jungle,
-    Remote Rocketship); aggregator links go stale fast and are treated as suspect.
+    Remote Rocketship, eFinancialCareers). Aggregator links go stale fast: only include
+    one if you have rendered it AND found the same live req on the company's own site.
 
 ## STEP 3 — Filter
 
@@ -72,7 +79,11 @@ Keep a role only if **all** hold:
 - Seniority is Analyst/Associate/mid-to-senior. **Drop VP, Director, ED, MD, Head of,
   Lead**, and drop graduate/intern roles.
 - Location is London-eligible (London, or UK hybrid/remote reachable from London).
-- Posted or updated in the **last 14 days**.
+- **HARD AGE GATE: posted or updated within the last 14 days, with a confirmable
+  date. If the posting date cannot be established, DROP the role - do not assume it
+  is recent.**
+- **LIVENESS GATE: the apply link was confirmed live in STEP 2.5 (200 for API roles;
+  rendered-and-present for web roles). Unconfirmed roles are already dropped.**
 - Not already keyed in `seen-roles.json`.
 - Company **not** applied to in the last 14 days (hard block from `applications.md`).
 - Not an excluded role-type: sales/BD, compliance/audit, pure IT/dev, or unrelated
@@ -171,7 +182,11 @@ even a "0 new" report.
 - Never surface a duplicate (respect `seen-roles.json`).
 - Respect the 14-day same-company block.
 - London-eligible locations only.
-- Last-14-days postings only.
+- **AGE GATE: last-14-days postings only, with a confirmable date. Undated or older
+  roles are DROPPED, never shown.**
+- **LIVENESS GATE: every role in the report was confirmed live (API 200 or rendered
+  and present). If liveness could not be confirmed, the role is DROPPED, not flagged.
+  No "click to confirm" roles ever appear in a report.**
 - **Desiree's seniority only** (Analyst/Associate/mid-to-senior); **no VP or above**.
 - None of the excluded role-types (sales/BD, compliance/audit, pure IT/dev,
   unrelated back-office).

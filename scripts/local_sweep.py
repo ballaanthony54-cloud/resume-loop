@@ -100,9 +100,27 @@ def now_utc() -> dt.datetime:
 
 
 def is_fresh(posted: dt.datetime | None, days: int) -> bool:
+    # HARD AGE GATE: a role must have a confirmable posting date within `days`.
+    # Undated roles are dropped, not kept, because we cannot prove they are recent.
     if posted is None:
-        return True  # keep undated rather than silently drop; flagged downstream
-    return (now_utc() - posted).days <= days
+        return False
+    age = (now_utc() - posted).days
+    return 0 <= age <= days
+
+
+def is_live(url: str) -> bool:
+    # LIVENESS GATE: confirm the apply URL still resolves (200). Dead postings
+    # (404/410) and unreachable ones are dropped. Tries HEAD, falls back to GET
+    # for servers that reject HEAD.
+    if not url:
+        return False
+    try:
+        r = requests.head(url, headers=UA, timeout=TIMEOUT, allow_redirects=True)
+        if r.status_code >= 400 or r.status_code == 405:
+            r = requests.get(url, headers=UA, timeout=TIMEOUT, allow_redirects=True)
+        return r.status_code == 200
+    except requests.RequestException:
+        return False
 
 
 def parse_iso(s: str | None) -> dt.datetime | None:
@@ -272,8 +290,9 @@ def write_pulse(kept: list[dict], stats: dict, days: int) -> None:
         "Gmail response scan are not part of this automated run; trigger an on-demand "
         "pulse in Cowork for those._",
         "",
-        f"**{len(kept)} fresh role(s)** matching your titles, London-eligible, posted "
-        f"in the last {days} days, after dedup.",
+        f"**{len(kept)} live role(s)** matching your titles, London-eligible, posted "
+        f"in the last {days} days, dedup'd, and confirmed reachable (HTTP 200) at "
+        f"sweep time.",
         "",
     ]
     for tier, label in (("A", "Tier A - priority companies"),
@@ -302,9 +321,10 @@ def write_pulse(kept: list[dict], stats: dict, days: int) -> None:
         f"- Postings seen: {stats['scanned']}",
         f"- Dropped (title/role-type/seniority): {stats['dropped_title']}",
         f"- Dropped (location): {stats['dropped_loc']}",
-        f"- Dropped (stale >{days}d): {stats['dropped_stale']}",
+        f"- Dropped (stale/undated, >{days}d gate): {stats['dropped_stale']}",
         f"- Dropped (already seen): {stats['dropped_dupe']}",
-        f"- Final kept: {len(kept)}",
+        f"- Dropped (dead link, not HTTP 200): {stats.get('dropped_dead', 0)}",
+        f"- Final kept (live): {len(kept)}",
         "",
     ]
     text = "\n".join(lines)
@@ -325,6 +345,8 @@ def main() -> None:
                     help="append new roles to seen-roles.json")
     ap.add_argument("--write-pulse", action="store_true",
                     help="write latest-pulse.md and archive/YYYY-MM-DD-pulse.md")
+    ap.add_argument("--no-verify", action="store_true",
+                    help="skip the live-link (HTTP 200) check (not recommended)")
     args = ap.parse_args()
 
     print(f"Resume Loop local sweep  |  {now_utc():%Y-%m-%d %H:%M UTC}\n")
@@ -385,6 +407,22 @@ def main() -> None:
         j["variant"] = guess_variant(j["title"])
         kept.append(j)
 
+    # 3b. LIVENESS GATE: verify each surviving apply link still resolves (HTTP 200).
+    # Anything dead (404/410) or unreachable is dropped so only currently-live roles
+    # are returned. ATS-API links are live by definition, so this rarely drops any,
+    # but it guarantees the promise.
+    dropped_dead = 0
+    if not args.no_verify and kept:
+        print(f"Verifying {len(kept)} link(s) are live...")
+        live_kept = []
+        for j in kept:
+            if is_live(j["link"]):
+                live_kept.append(j)
+            else:
+                dropped_dead += 1
+                print(f"  [dead]  {j['title']} [{j['company']}] -> dropped")
+        kept = live_kept
+
     kept.sort(key=lambda x: (x["tier"], x["company"]))
 
     # 4. Print.
@@ -410,12 +448,14 @@ def main() -> None:
     print(f"  dropped loc    : {dropped_loc}")
     print(f"  dropped stale  : {dropped_stale}")
     print(f"  dropped dupe   : {dropped_dupe}")
+    print(f"  dropped dead   : {dropped_dead}")
     print(f"  final kept     : {len(kept)}")
 
     stats = {
         "boards": sum(len(v) for v in live.values()), "scanned": scanned,
         "dropped_title": dropped_title, "dropped_loc": dropped_loc,
         "dropped_stale": dropped_stale, "dropped_dupe": dropped_dupe,
+        "dropped_dead": dropped_dead,
     }
 
     # 5. Optionally write the pulse markdown.
