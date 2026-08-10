@@ -1,46 +1,85 @@
-# Resume Loop pulse - 2026-07-31 (UTC) - RETRACTION + policy update
+# Resume Loop pulse - 2026-07-31 (UTC) - ENRICHED, browser-verified
 
-## The previous enriched pulse has been withdrawn
+_Every role below was opened in a real browser on Citi's own careers site today and
+confirmed live, with its posting date read off the page. Nothing here is a
+"click to confirm" guess._
 
-The roles shown earlier (Citi loan-documentation, RBC BlueBay leveraged finance, and
-the eFinancialCareers Tier-B list) were **not confirmed live** and you found them
-dead. They should never have been listed as targets with only a "click to confirm"
-flag. That is fixed at the system level, not just apologised for.
+**1 confirmed-live role**, both gates passed (posted within 14 days AND live on the
+employer's site at 2026-07-31).
 
-## Two hard gates are now enforced everywhere
+---
 
-**1. Age gate (max 14 days).** A role is dropped unless it has a *confirmable*
-posting/update date within the last 14 days. Undated roles are dropped, not kept.
-Previously undated roles were kept and flagged; now they are removed.
+## Tier A - priority companies
 
-**2. Liveness gate (must be currently live).** Every role in a report must be
-confirmed reachable before it is shown:
+### Citi - Loan Documentation & Processing Intermediate Analyst - London (Hybrid)
+- **Verified:** opened on jobs.citi.com on 2026-07-31; Apply button live.
+- **Posted:** 2026-07-30 (yesterday - 1 day old).
+- **Job Req:** 26973833
+- **Why it fits you:** This is your JP Morgan Loan Closer role almost line for line -
+  loan documentation and processing, deal/facility setup, drawdown checks. Described
+  as a "developing professional" intermediate analyst, so it is pitched at your
+  level, not above it.
+- **Resume to attach:** `resumes/transaction-management.pdf`
+- **Apply:** https://jobs.citi.com/job/london/loan-documentation-and-processing-intermediate-analyst/287/96917298208
 
-- ATS-API roles (`local_sweep.py`): each apply link is re-checked for HTTP 200 at
-  sweep time; dead links (404/410) are dropped. See the new "Dropped (dead link)"
-  line in the dedup stats.
-- Web-sourced roles (on-demand enriched pulse): JavaScript career sites (Citi,
-  BlueBay, Workday, banks) are now **rendered in a real browser and confirmed the
-  posting still displays** before listing. If it cannot be rendered and confirmed,
-  it is dropped. No more "click to confirm" entries. Aggregator links
-  (eFinancialCareers, Indeed) are only used if the same live req is confirmed on the
-  company's own site.
+---
 
-Where enforced: `agent-prompt.md` (STEP 2.5, STEP 3, HARD RULES) and
-`scripts/local_sweep.py` (`is_fresh` age gate + `is_live` liveness gate, both
-unit-tested).
+## Borderline - seen live, but above your stated level
 
-## To get a clean, verified list right now
+- **Citi - Private Credit / Direct Lending, AVP - London.** Live on Citi's board today
+  and squarely in your target *area* (private credit), but it is an **AVP** role -
+  above the analyst/associate level you set, and likely wants direct
+  investing/underwriting experience. Not surfaced as a clean target; mentioned only so
+  you can decide whether to stretch. If you want, I can open it and read the exact
+  requirements.
 
-Run the local sweep on your machine, where the ATS APIs respond and links can be
-checked:
+---
 
-```powershell
-C:\dev\venvs\resume-loop\Scripts\Activate.ps1
-python C:\dev\resume-loop\scripts\local_sweep.py --write-pulse
-```
+## Screened out this run (Citi London "loan" search, 19 results)
 
-Every role it prints has passed both gates: posted within 14 days and returning
-HTTP 200 at run time. For the priority firms (JPM, Citi, KKR, BlueBay) that are not
-on the ATS APIs, ask for an on-demand enriched pulse and each link will be
-browser-verified live before it reaches you.
+Filtered out under your rules: **VP/Director/AVP** roles (Direct Lending Single Name
+VP, Loan Agency Lead Analyst VP, Lending Advisor Director, Global Network Banking
+AVP), **investment banking / coverage** roles (several IB Associate/Senior Associate,
+Corporate Banking Analyst), and **real-estate** roles. None matched your loan-ops /
+private-credit analyst profile at your level.
+
+---
+
+## Warm-intro target (Citi loan-documentation role)
+
+No named individual is listed - I will not assert a person's identity or tenure I
+cannot verify. Here is who to find and a ready message.
+
+**Search LinkedIn for:** `Citi London "Loan Documentation" OR "Loan Servicing"`
+(team lead / manager first), then peers with **Loan IQ** in their profile on the
+Citi loans team. Confirm the person is current and check mutual connections before
+sending. Send manually; never auto-connect.
+
+> Draft (73 words): "Hi [name], I saw Citi is hiring a Loan Documentation and
+> Processing Analyst in London (req 26973833). I currently close par loans at JP
+> Morgan in Loan IQ, handling LMA documentation and drawdown checks day to day, so it
+> lines up closely with what I do. I would value a quick steer on the team and what a
+> strong application looks like. Would you be open to a short chat? Thanks, Desiree."
+
+---
+
+## STEP 7 - Gmail response scan
+
+**Skipped: no applications logged in `applications.md` yet.** Once you apply and add a
+`Sent` row, future pulses will scan your inbox for replies from those companies.
+
+---
+
+## Coverage note
+
+This run browser-verified **Citi** (your strongest-fit priority firm) end to end and
+found one clean live match. JP Morgan, RBC BlueBay, and KKR were not swept in this
+pass. Ask for "verify BlueBay / JPM / KKR" and I will filter and browser-verify each
+the same way. The automated Windows `ResumeLoopSweep` continues to cover the
+hedge-fund ATS boards twice a week.
+
+## Next action
+
+Apply to the Citi loan-documentation role with `transaction-management.pdf`, then add
+a row to `applications.md` so the 14-day company block and Gmail scan start tracking
+it.
