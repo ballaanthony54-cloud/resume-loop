@@ -1,4 +1,4 @@
-# Resume Loop pulse - 2026-10-22 (UTC)
+# Resume Loop pulse - 2026-10-26 (UTC)
 
 _Automated Windows sweep (verified ATS links). Warm-intro drafts and the Gmail response scan are not part of this automated run; trigger an on-demand pulse in Cowork for those._
 
