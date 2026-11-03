@@ -1,4 +1,4 @@
-# Resume Loop pulse - 2026-10-26 (UTC)
+# Resume Loop pulse - 2026-11-03 (UTC)
 
 _Automated Windows sweep (verified ATS links). Warm-intro drafts and the Gmail response scan are not part of this automated run; trigger an on-demand pulse in Cowork for those._
 
@@ -10,10 +10,10 @@ _No new roles this run. Nothing to apply to today._
 ## Dedup stats
 
 - Boards scanned: 7
-- Postings seen: 345
-- Dropped (title/role-type/seniority): 339
-- Dropped (location): 5
-- Dropped (stale/undated, >14d gate): 0
-- Dropped (already seen): 1
+- Postings seen: 336
+- Dropped (title/role-type/seniority): 331
+- Dropped (location): 4
+- Dropped (stale/undated, >14d gate): 1
+- Dropped (already seen): 0
 - Dropped (dead link, not HTTP 200): 0
 - Final kept (live): 0
